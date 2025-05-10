@@ -1,0 +1,172 @@
+SELECT * From user_profile;
+SELECT * FROM viewers;
+
+
+---JOINING USERPROFILE TABLE AND VIEWERS TABLE 
+
+SELECT A.USERID,
+       GENDER,
+       RACE,
+       AGE,
+       PROVINCE,
+       B.CHANNEL,
+       "RecordDate2 (UTC)",
+       DAY,
+       TIME,
+       DURATION,
+FROM USER_PROFILE AS A
+FULL OUTER JOIN VIEWERS AS B
+ON A.USERID = B.USERID;
+
+--- Combined the Userprofile table and viwership table, excluded unnecessary info like email address
+SELECT * 
+FROM COMBTABLE;
+
+--- Determine the total amount of viewers who have subscribed 
+
+SELECT COUNT (DISTINCT USERID) AS TOTAL_USERS
+FROM COMBTABLE;
+
+
+----Converting duration to seconds
+
+SELECT DURATION,
+       extract(hour from duration)*3600+ 
+       extract(minute from duration)*60+
+       extract(second from duration) AS DURATION1
+FROM viewers;
+
+
+
+----Finding which day has most viewerships
+WITH join_tables AS (SELECT 
+        A.userid,
+        A.channel,
+        A.duration,
+        EXTRACT(HOUR FROM A.duration) * 3600 + 
+        EXTRACT(MINUTE FROM A.duration) * 60 + 
+        EXTRACT(SECOND FROM A.duration) AS duration1,
+        B.gender,
+        A.day
+    FROM viewers AS A 
+    FULL OUTER JOIN user_profile AS B 
+    ON A.USERID = B.USERID)
+SELECT 
+    DAY, CHANNEL, GENDER,
+    COUNT(DURATION1) AS TOTAL_TIME,
+FROM join_tables
+GROUP BY day, channel, GENDER
+ORDER BY DAY;
+
+----Finding which day has most viewerships, LIMIT TO TE
+WITH join_tables AS (SELECT 
+        A.userid,
+        A.channel,
+        A.duration,
+        EXTRACT(HOUR FROM A.duration) * 3600 + 
+        EXTRACT(MINUTE FROM A.duration) * 60 + 
+        EXTRACT(SECOND FROM A.duration) AS duration1,
+        B.gender,
+        A.day
+    FROM viewers AS A 
+    FULL OUTER JOIN user_profile AS B 
+    ON A.USERID = B.USERID)
+SELECT 
+    DAY, CHANNEL, GENDER,
+    COUNT(DURATION1) AS TOTAL_TIME,
+FROM join_tables
+GROUP BY day, channel, GENDER
+ORDER BY TOTAL_TIME DESC
+LIMIT 10;
+
+
+---Viewership by Gender
+
+WITH join_tables AS (SELECT channel, gender, B.userid
+FROM viewers AS A 
+FULL OUTER JOIN user_profile AS B
+ON A.userid =B.userid)
+SELECT Gender,channel,count(userid)
+FROM join_tables
+Group by gender,channel
+order by gender;
+
+----GROUP BY CHANNEL 
+
+SELECT count(USERID), CHANNEL
+FROM (SELECT B.userid,channel
+FROM VIEWERS AS A
+FULL OUTER JOIN user_profile AS B
+ON A.userid=B.userid)
+GROUP BY channel;
+
+
+---- How many items have NULL or no value 
+
+SELECT COUNT(*) AS Missing_Count
+FROM COMBTABLE
+WHERE GENDER IS NULL OR GENDER = 'None' OR GENDER = 'Other'
+    OR RACE IS NULL OR RACE = 'None' OR RACE = 'Other'
+    OR AGE IS NULL OR AGE = 0
+    OR PROVINCE IS NULL OR PROVINCE = 'None' OR PROVINCE = 'Province';
+
+
+----AGE BUCKET OF VIEWERS
+SELECT UserID, Gender, Race,
+CASE 
+WHEN AGE between 3 AND 12 THEN 'Youngster'
+WHEN AGE between  13 and 19 THEN 'Teenager'
+WHEN AGE between 20 and 59 THEN 'Adult'
+WHEN AGE between 60 and 70 THEN 'Senior'
+ELSE 'Golden Ager'
+END AS AGE_CATEGORY
+FROM COMBTABLE;
+
+---TIME MOST PEOPLE ARE WATCHING TV
+SELECT COUNT (DISTINCT USERID),TIME_BUCKET
+GROUP BY TIME_BUCKET
+ORDER BY COUNT (USERID)
+
+
+----TOTAL VIEWERS PER PROVINCE
+
+SELECT PROVINCE,
+      COUNT(userid) AS Total_per_province
+FROM USER_PROFILE
+GROUP BY PROVINCE
+ORDER BY COUNT (USERID) DESC;
+
+--
+SELECT COUNT (DISTINCT USERID), PROVINCE
+FROM COMBTABLE
+GROUP BY PROVINCE
+ORDER BY COUNT (USERID) DESC;
+
+SELECT PROVINCE,
+FROM COMBTABLE
+WHERE PROVINCE ='None';
+
+---VIEWERSHIP  BY RACE PER PROVINCE
+SELECT RACE, COUNT (DISTINCT USERID), PROVINCE
+FROM COMBTABLE
+GROUP RACE, PROVINCE
+ORDER BY 
+       CASE WHEN RACE = 'BLACK' THEN 1
+       WHEN RACE = 'WHITE' THEN 2
+       WHEN RACE = 'COLOURED' THEN 3 
+       WHEN  RACE = 'INDIAN_ASIAN' THEN 4
+       ELSE5 
+       END;
+
+SELECT RACE, COUNT (DISTINCT USERID) AS NUMBER_OF_VIEWERS, PROVINCE
+FROM COMBTABLE
+GROUP RACE, PROVINCE
+SELECT SUM (NUMBER OF VIEWERS);
+
+
+SELECT COUNT (USERID), RECORDDATE,
+FROM COMBTABLE
+GROUP BY RECORD_DATE
+ORDER BY COUNT (USERID) DESC
+LIMIT 5;
+
